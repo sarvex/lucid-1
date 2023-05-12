@@ -49,9 +49,7 @@ def activation_atlas(
             directions_batch, model, layer=layer.name, size=icon_size, num_attempts=1
         )
         icons += icon_batch
-    canvas = make_canvas(icons, coordinates, grid_size)
-
-    return canvas
+    return make_canvas(icons, coordinates, grid_size)
 
 
 def aligned_activation_atlas(
@@ -174,7 +172,7 @@ def bin_laid_out_activations(layout, activations, grid_size, threshold=5):
             means.append(mean)
 
     assert len(means) == len(coordinates) == len(counts)
-    if len(coordinates) == 0:
+    if not coordinates:
         raise RuntimeError("Binning activations led to 0 cells containing activations!")
 
     return means, coordinates, counts

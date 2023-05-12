@@ -84,9 +84,7 @@ def _load_img(handle, target_dtype=np.float32, size=None, **kwargs):
         if len(size) > 2:
             size = size[:2]
             log.warning(
-                "`_load_img()` received size: {}, trimming to first two dims!".format(
-                    size
-                )
+                f"`_load_img()` received size: {size}, trimming to first two dims!"
             )
         image_pil = image_pil.resize(size, resample=PIL.Image.LANCZOS)
 
@@ -103,12 +101,12 @@ def _load_img(handle, target_dtype=np.float32, size=None, **kwargs):
     ndimage = np.divide(image_array, image_max_value, dtype=target_dtype)
 
     rank = len(ndimage.shape)
-    if rank == 3:
-        return ndimage
-    elif rank == 2:
+    if rank == 2:
         return np.repeat(np.expand_dims(ndimage, axis=2), 3, axis=2)
+    elif rank == 3:
+        return ndimage
     else:
-        message = "Loaded image has more dimensions than expected: {}".format(rank)
+        message = f"Loaded image has more dimensions than expected: {rank}"
         raise NotImplementedError(message)
 
 
@@ -125,17 +123,7 @@ def _load_text(handle, split=False, encoding="utf-8"):
 
 def _load_graphdef_protobuf(handle, **kwargs):
     """Load GraphDef from a binary proto file."""
-    # as_graph_def
-    graph_def = tf.GraphDef.FromString(handle.read())
-
-    # check if this is a lucid-saved model
-    # metadata = modelzoo.util.extract_metadata(graph_def)
-    # if metadata is not None:
-    #   url = handle.name
-    #   return modelzoo.vision_base.Model.load_from_metadata(url, metadata)
-
-    # else return a normal graph_def
-    return graph_def
+    return tf.GraphDef.FromString(handle.read())
 
 
 def _load_pickle(handle, **kwargs):
@@ -266,6 +254,6 @@ def _get_extension(url_or_handle):
     else:
         decompressor_ext = None
     if not ext:
-        raise RuntimeError("No extension in URL: " + url_or_handle)
+        raise RuntimeError(f"No extension in URL: {url_or_handle}")
     return ext, decompressor_ext
 

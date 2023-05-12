@@ -27,16 +27,16 @@ _template = """
 
 def js_id(name):
   # name_str will become the name of a javascript variable, and can't contain dashes.
-  return name + "_" + str(uuid.uuid4()).replace('-', '_')
+  return f"{name}_" + str(uuid.uuid4()).replace('-', '_')
 
 def build_svelte(html_fname):
   js_fname = html_fname.replace(".html", ".js")
-  cmd = "svelte compile --format iife " + html_fname + " > " + js_fname
+  cmd = f"svelte compile --format iife {html_fname} > {js_fname}"
   print(cmd)
   try:
     print(subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT))
   except subprocess.CalledProcessError as exception:
-    print("Svelte build failed! Output:\n{}".format(exception.output.decode()))
+    print(f"Svelte build failed! Output:\n{exception.output.decode()}")
   return js_fname
 
 
@@ -72,7 +72,7 @@ def SvelteComponent(name, path):
 def html_define_svelte(line, cell):
   base_name = line.split()[0]
   id_str = js_id(base_name)
-  html_fname = osp.join(_svelte_temp_dir, id_str + ".html")
+  html_fname = osp.join(_svelte_temp_dir, f"{id_str}.html")
   with open(html_fname, "w") as f:
     f.write(cell)
   component = SvelteComponent(id_str, html_fname)

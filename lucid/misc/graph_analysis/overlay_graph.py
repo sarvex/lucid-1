@@ -49,7 +49,7 @@ class OverlayNode():
         raise NotImplementedError
 
   def __repr__(self):
-    return "<%s: %s>" % (self.name, self.op)
+    return f"<{self.name}: {self.op}>"
 
   @property
   def op(self):
@@ -93,8 +93,11 @@ class OverlayStructure():
   def __init__(self, structure_type, structure):
     self.structure_type = structure_type
     self.structure = structure # A dictionary
-    self.children = sum([component if isinstance(component, (list, tuple)) else [component]
-                       for component in structure.values()], [])
+    self.children = sum(
+        (component if isinstance(component, (list, tuple)) else [component]
+         for component in structure.values()),
+        [],
+    )
 
   def __contains__(self, item):
     return OverlayNode.as_name(item) in [n.name for n in self.children]
@@ -176,16 +179,16 @@ class OverlayGraph():
 
     print("digraph G {")
     if groups is not None:
-        for root, group in groups.items():
-          print("")
-          print(("  subgraph", "cluster_%s" % root.name.replace("/", "_"), "{"))
-          print(("  label = \"%s\"") % (root.name))
-          for node in group:
-            print(("    \"%s\"") % node.name)
-          print("  }")
+      for root, group in groups.items():
+        print("")
+        print(("  subgraph", f'cluster_{root.name.replace("/", "_")}', "{"))
+        print(("  label = \"%s\"") % (root.name))
+        for node in group:
+          print(("    \"%s\"") % node.name)
+        print("  }")
     for node in self.nodes:
       for inp in node.inputs:
-        print("  ", '"' + inp.name + '"', " -> ", '"' + (node.name) + '"')
+        print("  ", f'"{inp.name}"', " -> ", f'"{node.name}"')
     print("}")
 
   def filter(self, keep_nodes, pass_through=True):
@@ -206,14 +209,14 @@ class OverlayGraph():
   def gcd(self, branches):
     """Greatest common divisor (ie. input) of several nodes."""
     branches = [self[node] for node in branches]
-    branch_nodes  = [set([node]) | node.extended_inputs for node in branches]
+    branch_nodes = [{node} | node.extended_inputs for node in branches]
     branch_shared =  set.intersection(*branch_nodes)
     return max(branch_shared, key=lambda n: self.nodes.index(n))
 
   def lcm(self, branches):
     """Lowest common multiplie (ie. consumer) of several nodes."""
     branches = [self[node] for node in branches]
-    branch_nodes  = [set([node]) | node.extended_consumers for node in branches]
+    branch_nodes = [{node} | node.extended_consumers for node in branches]
     branch_shared =  set.intersection(*branch_nodes)
     return min(branch_shared, key=lambda n: self.nodes.index(n))
 
@@ -222,9 +225,11 @@ class OverlayGraph():
 
   def collapse_structures(self, structure_map):
 
-    keep_nodes = [node.name for node in self.nodes
-                  if not any(node in structure.children for structure in structure_map.values())
-                    or node in structure_map]
+    keep_nodes = [
+        node.name for node in self.nodes
+        if all(node not in structure.children
+               for structure in structure_map.values()) or node in structure_map
+    ]
 
     new_overlay = self.filter(keep_nodes)
 

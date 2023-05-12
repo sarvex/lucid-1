@@ -100,7 +100,7 @@ def normalize_gradient(grad_scales=None):
     if grad_scales is not None:
         grad_scales = np.float32(grad_scales)
 
-    op_name = "NormalizeGrad_" + str(uuid.uuid4())
+    op_name = f"NormalizeGrad_{str(uuid.uuid4())}"
 
     @tf.RegisterGradient(op_name)
     def _NormalizeGrad(op, grad):

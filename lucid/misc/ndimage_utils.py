@@ -25,17 +25,14 @@ def resize(image, target_size=None, ratios=None, **kwargs):
 
     # input validation
     if target_size is None:
-      assert ratios is not None
+        assert ratios is not None
     else:
-      if isinstance(target_size, int):
-          target_size = (target_size, target_size)
+        if isinstance(target_size, int):
+            target_size = (target_size, target_size)
 
-      if not isinstance(target_size, (list, tuple, np.ndarray)):
-          message = (
-              "`target_size` should be a single number (width) or a list"
-              "/tuple/ndarray (width, height), not {}.".format(type(target_size))
-          )
-          raise ValueError(message)
+        if not isinstance(target_size, (list, tuple, np.ndarray)):
+            message = f"`target_size` should be a single number (width) or a list/tuple/ndarray (width, height), not {type(target_size)}."
+            raise ValueError(message)
 
     rank = len(image.shape)
     assert 3 <= rank <= 4
@@ -92,9 +89,11 @@ def soft_alpha_blend(image_with_alpha, amount_background=.333, gamma=2.2):
     rgb = image_with_alpha[..., :3]
     white = np.ones_like(rgb)
     background = amount_background * rgb + (1 - amount_background) * white
-    blended = np.power(
-        (alpha * np.power(rgb, gamma) + (1 - alpha) * np.power(background, gamma)),
+    return np.power(
+        (
+            alpha * np.power(rgb, gamma)
+            + (1 - alpha) * np.power(background, gamma)
+        ),
         1 / gamma,
     )
-    return blended
 

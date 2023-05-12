@@ -80,13 +80,13 @@ def cppn(
     net = tf.stack([tf.stack([x, y], -1)] * batch, 0)
 
     with slim.arg_scope(
-        [slim.conv2d],
-        kernel_size=[1, 1],
-        activation_fn=None,
-        weights_initializer=tf.initializers.variance_scaling(),
-        biases_initializer=tf.initializers.random_normal(0.0, 0.1),
-    ):
-        for i in range(num_layers):
+            [slim.conv2d],
+            kernel_size=[1, 1],
+            activation_fn=None,
+            weights_initializer=tf.initializers.variance_scaling(),
+            biases_initializer=tf.initializers.random_normal(0.0, 0.1),
+        ):
+        for _ in range(num_layers):
             x = slim.conv2d(net, num_hidden_channels)
             if normalize:
                 x = slim.instance_norm(x)

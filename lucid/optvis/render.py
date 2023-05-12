@@ -186,9 +186,7 @@ def make_vis_T(model, objective_f, param_f=None, optimizer=None,
   # pylint: enable=unused-variable
 
   def T2(name):
-    if name in local_vars:
-      return local_vars[name]
-    else: return T(name)
+    return local_vars[name] if name in local_vars else T(name)
 
   return T2
 
@@ -216,7 +214,7 @@ def make_t_image(param_f):
   elif isinstance(param_f, tf.Tensor):
     t_image = param_f
   else:
-    raise TypeError("Incompatible type for param_f, " + str(type(param_f)) )
+    raise TypeError(f"Incompatible type for param_f, {str(type(param_f))}")
 
   if not isinstance(t_image, tf.Tensor):
     raise TypeError("param_f should produce a Tensor, but instead created a "
@@ -233,8 +231,7 @@ def make_t_image(param_f):
 def make_transform_f(transforms):
   if type(transforms) is not list:
     transforms = transform.standard_transforms
-  transform_f = transform.compose(transforms)
-  return transform_f
+  return transform.compose(transforms)
 
 
 def make_optimizer(optimizer, args):
@@ -258,7 +255,6 @@ def import_model(model, t_image, t_image_raw=None, scope="import", input_map=Non
 
   def T(layer):
     if layer == "input": return t_image_raw
-    if layer == "labels": return model.labels
-    return T_(layer)
+    return model.labels if layer == "labels" else T_(layer)
 
   return T

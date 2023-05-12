@@ -28,6 +28,6 @@ def test_aligned_activation_atlas():
     atlasses = aligned_activation_atlas(
         model1, layer1, model2, layer2, number_activations=subset
     )
-    path = "tests/recipes/results/activation_atlas/aligned_atlas-{}-of-{}.jpg".format(index, len(atlasses))
-    for index, atlas in enumerate(atlasses):
+    path = f"tests/recipes/results/activation_atlas/aligned_atlas-{index}-of-{len(atlasses)}.jpg"
+    for atlas in atlasses:
         save(atlas, path)

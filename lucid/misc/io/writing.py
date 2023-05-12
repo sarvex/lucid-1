@@ -69,11 +69,7 @@ def write_handle(path, mode=None):
         gfile.MakeDirs(os.path.dirname(path))
 
     if mode is None:
-        if _supports_binary_writing(path):
-            mode = "wb"
-        else:
-            mode = "w"
-
+        mode = "wb" if _supports_binary_writing(path) else "w"
     handle = gfile.Open(path, mode)
     yield handle
     handle.close()

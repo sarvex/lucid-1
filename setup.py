@@ -14,6 +14,7 @@
 
 """Setup script for TensorFlow Lucid."""
 
+
 import lucid
 from setuptools import setup, find_packages
 
@@ -38,9 +39,7 @@ setup(
     author="The Lucid Authors",
     author_email="deepviz@google.com",
     url="https://github.com/tensorflow/lucid",
-    download_url=(
-        "https://github.com/tensorflow/lucid" "/archive/v{}.tar.gz".format(version)
-    ),
+    download_url=f"https://github.com/tensorflow/lucid/archive/v{version}.tar.gz",
     license="Apache License 2.0",
     keywords=[
         "tensorflow",

@@ -20,7 +20,7 @@ def inceptionv1():
 
 
 def assert_gradient_ascent(objective, model, batch=None, alpha=False, shape=None):
-    with tf.Graph().as_default() as graph, tf.Session() as sess:
+    with (tf.Graph().as_default() as graph, tf.Session() as sess):
         shape = shape or [1, 32, 32, 3]
         t_input = param.image(shape[1], h=shape[2], batch=batch, alpha=alpha)
         if alpha:
@@ -32,7 +32,7 @@ def assert_gradient_ascent(objective, model, batch=None, alpha=False, shape=None
                 return t_input
             if layer == "labels":
                 return model.labels
-            return graph.get_tensor_by_name("import/%s:0" % layer)
+            return graph.get_tensor_by_name(f"import/{layer}:0")
 
         loss_t = objective(T)
         opt_op = tf.train.AdamOptimizer(0.1).minimize(-loss_t)

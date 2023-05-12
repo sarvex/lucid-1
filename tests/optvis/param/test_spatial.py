@@ -32,7 +32,7 @@ def test_param_can_fit_image(param, test_image, maxsteps=1000):
         optimize_op = optimizer.minimize(loss_t)
 
         tf.global_variables_initializer().run()
-        for step in range(maxsteps):
+        for _ in range(maxsteps):
             mean_distance, _ = sess.run([dist_t, optimize_op])
             if mean_distance < 0.01:
                 break

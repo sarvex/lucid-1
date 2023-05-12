@@ -166,9 +166,7 @@ def save_txt(object, handle, **kwargs):
                 line_type = type(line)
                 line = repr(line).encode()
                 warnings.warn(
-                    "`save_txt` found an object of type {}; using `repr` to convert it to string.".format(
-                        line_type
-                    )
+                    f"`save_txt` found an object of type {line_type}; using `repr` to convert it to string."
                 )
             if not line.endswith(b"\n"):
                 line += b"\n"
@@ -188,9 +186,7 @@ def save_pb(object, handle, **kwargs):
         handle.write(object.SerializeToString())
     except AttributeError:
         warnings.warn(
-            "`save_protobuf` failed for object {}. Re-raising original exception.".format(
-                object
-            )
+            f"`save_protobuf` failed for object {object}. Re-raising original exception."
         )
         raise
     finally:
@@ -198,11 +194,13 @@ def save_pb(object, handle, **kwargs):
 
 
 def save_pickle(object, handle, **kwargs):
-  try:
-    pickle.dump(object, handle)
-  except AttributeError as e:
-    warnings.warn("`save_pickle` failed for object {}. Re-raising original exception.".format(object))
-    raise e
+    try:
+        pickle.dump(object, handle)
+    except AttributeError as e:
+        warnings.warn(
+            f"`save_pickle` failed for object {object}. Re-raising original exception."
+        )
+        raise e
 
 
 def compress_xz(handle, **kwargs):
@@ -211,7 +209,9 @@ def compress_xz(handle, **kwargs):
         ret.name = handle.name
         return ret
     except AttributeError as e:
-        warnings.warn("`compress_xz` failed for handle {}. Re-raising original exception.".format(handle))
+        warnings.warn(
+            f"`compress_xz` failed for handle {handle}. Re-raising original exception."
+        )
         raise e
 
 
@@ -256,11 +256,7 @@ def save(thing, url_or_handle, allow_unsafe_formats=False, save_context: Optiona
     # Determine context
     # Is this a handle? What is the extension? Are we saving to GCS?
     is_handle = hasattr(url_or_handle, "write") and hasattr(url_or_handle, "name")
-    if is_handle:
-        path = url_or_handle.name
-    else:
-        path = url_or_handle
-
+    path = url_or_handle.name if is_handle else url_or_handle
     path_without_ext, ext = os.path.splitext(path)
     is_gcs = path.startswith("gs://")
 
@@ -271,7 +267,7 @@ def save(thing, url_or_handle, allow_unsafe_formats=False, save_context: Optiona
         compressor = nullcontext
 
     if not ext:
-        raise RuntimeError("No extension in URL: " + path)
+        raise RuntimeError(f"No extension in URL: {path}")
 
     # Determine which saver should be used
     if ext in savers:
@@ -287,11 +283,7 @@ def save(thing, url_or_handle, allow_unsafe_formats=False, save_context: Optiona
         raise ValueError(message.format(ext, type(thing).__name__, list(savers.keys())))
 
     # Actually save
-    if is_handle:
-        handle_provider = nullcontext
-    else:
-        handle_provider = write_handle
-
+    handle_provider = nullcontext if is_handle else write_handle
     with handle_provider(url_or_handle) as handle:
         with compressor(handle) as compressed_handle:
             result = saver(thing, compressed_handle, **kwargs)
@@ -311,14 +303,12 @@ def save(thing, url_or_handle, allow_unsafe_formats=False, save_context: Optiona
     save_context = save_context if save_context is not None else CaptureSaveContext.current_save_context()
     if save_context:
         log.debug(
-            "capturing save: resulted in {} -> {} in save_context {}".format(
-                result, path, save_context
-            )
+            f"capturing save: resulted in {result} -> {path} in save_context {save_context}"
         )
         save_context.capture(result)
 
     if result is not None and "url" in result and result["url"].startswith("gs://"):
-        result["serve"] = "https://storage.googleapis.com/{}".format(result["url"][5:])
+        result["serve"] = f'https://storage.googleapis.com/{result["url"][5:]}'
 
     return result
 

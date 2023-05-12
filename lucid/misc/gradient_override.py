@@ -68,7 +68,7 @@ def register_to_random_name(grad_f):
   Returns:
     String that gradient function was registered to.
   """
-  grad_f_name = grad_f.__name__ + "_" + str(uuid.uuid4())
+  grad_f_name = f"{grad_f.__name__}_{str(uuid.uuid4())}"
   tf.RegisterGradient(grad_f_name)(grad_f)
   return grad_f_name
 
@@ -94,12 +94,11 @@ def gradient_override_map(override_dict):
       values: functions or strings registered to gradient functions
 
   """
-  override_dict_by_name = {}
-  for (op_name, grad_f) in override_dict.items():
-    if isinstance(grad_f, str):
-       override_dict_by_name[op_name] = grad_f
-    else:
-      override_dict_by_name[op_name] = register_to_random_name(grad_f)
+  override_dict_by_name = {
+      op_name:
+      grad_f if isinstance(grad_f, str) else register_to_random_name(grad_f)
+      for op_name, grad_f in override_dict.items()
+  }
   with tf.get_default_graph().gradient_override_map(override_dict_by_name):
     yield
 
@@ -153,7 +152,7 @@ def use_gradient(grad_f):
         """Store the value of out to a python variable."""
         state["out_value"] = out_value
 
-      store_name = "store_" + f.__name__
+      store_name = f"store_{f.__name__}"
       store = tf.py_func(store_out, [out], (), stateful=True, name=store_name)
 
       # Next, we create the mock function, with an overriden gradient.
@@ -166,7 +165,7 @@ def use_gradient(grad_f):
 
       with tf.control_dependencies([store]):
         with gradient_override_map({"PyFunc": grad_f_name}):
-          mock_name = "mock_" + f.__name__
+          mock_name = f"mock_{f.__name__}"
           mock_out = tf.py_func(mock_f, inputs, out.dtype, stateful=True,
                                 name=mock_name)
           mock_out.set_shape(out.get_shape())
@@ -174,5 +173,7 @@ def use_gradient(grad_f):
       # Finally, we can return the mock.
 
       return mock_out
+
     return inner
+
   return function_wrapper

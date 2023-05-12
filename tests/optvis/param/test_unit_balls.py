@@ -25,7 +25,7 @@ def test_unit_ball_L2(shape, eps=1e-6):
     objective = optimizer.minimize(-unit_ball)
     tf.global_variables_initializer().run()
     norm_value = unit_ball_L2_norm.eval()
-    for i in range(num_steps):
+    for _ in range(num_steps):
       _, new_norm_value, unit_ball_value = sess.run([objective, unit_ball_L2_norm, unit_ball])
       log.info("L2: %s, Value: %s", new_norm_value, unit_ball_value)
       assert new_norm_value >= norm_value - eps
@@ -46,7 +46,7 @@ def test_unit_ball_L_inf(shape, precondition, eps=1e-6):
     optimizer = tf.train.GradientDescentOptimizer(learning_rate)
     objective = optimizer.minimize(-unit_ball)
     tf.global_variables_initializer().run()
-    for i in range(num_steps):
+    for _ in range(num_steps):
       _, unit_ball_max_value, unit_ball_value = sess.run([objective, unit_ball_max, unit_ball])
       log.info("Linf: %s, Value: %s", unit_ball_max_value, unit_ball_value)
       assert unit_ball_max_value <= 1.0 + eps

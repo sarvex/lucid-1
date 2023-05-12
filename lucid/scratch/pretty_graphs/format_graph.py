@@ -20,7 +20,7 @@ class Fragment(object):
     self.offset = [0,0] if offset is None else offset
 
   def render(self):
-    return """<g transform="translate(%s,%s)">%s</g>""" % (self.offset[0], self.offset[1], self.svg)
+    return f"""<g transform="translate({self.offset[0]},{self.offset[1]})">{self.svg}</g>"""
 
   def shift(self, delta):
     self.offset[0] += delta[0]
@@ -79,7 +79,7 @@ class FragmentContainer(object):
     svg = "\n  ".join(node.render() for node in self.fragments)
 
     if show_bounds:
-      bound_rect = """<rect x=%s y=%s width=%s height=%s fill="#E55" style="opacity: 0.3"> </rect>""" % (0, 0, shape[0], shape[1])
+      bound_rect = f"""<rect x=0 y=0 width={shape[0]} height={shape[1]} fill="#E55" style="opacity: 0.3"> </rect>"""
     else:
       bound_rect = ""
 
@@ -128,16 +128,12 @@ class LayoutNode(LayoutComponent):
     return [self.node]
 
   def render(self):
-    if self.node == None:
+    if self.node is None:
       inner = ""
       shape = [10, 20]
     elif self.node.op in ["Placeholder", "Softmax"]:
       inner = "<polygon points=\"0,10 5,20 15,20 20,10 15,0 5,0 0,10\" %s></polygon>"
       shape = [20,20]
-#     elif self.node.op in ["Concat", "ConcatV2"]:
-#       inner = ""
-#       shape = [3, 20]
-
     elif self.node.op in ["Concat", "ConcatV2"]:
       inner = "<rect width=10 height=20 rx=2 ry=2 x=4 %s></rect>"
       shape = [14, 20]
@@ -152,7 +148,7 @@ class LayoutNode(LayoutComponent):
       shape = [10, 20]
 
     if "%s" in inner:
-      info = """class="node" data-tf-name="%s" data-tf-op="%s" """ % (self.node.name, self.node.op)
+      info = f"""class="node" data-tf-name="{self.node.name}" data-tf-op="{self.node.op}" """
       inner = inner % info
 
     inner = "<g transform=\"translate(%s, %s)\">%s</g>" % (self.pad[0][0], self.pad[1][0], inner)
@@ -172,7 +168,7 @@ class LayoutBranch(LayoutComponent):
 
   @property
   def contained_nodes(self):
-    return sum([branch.contained_nodes for branch in self.branches], [])
+    return sum((branch.contained_nodes for branch in self.branches), [])
 
   def render(self):
     rendered_nodes = [node.render() for node in self.branches]
@@ -207,7 +203,7 @@ class LayoutSeq(LayoutComponent):
 
   @property
   def contained_nodes(self):
-    return sum([branch.contained_nodes for branch in self.nodes], [])
+    return sum((branch.contained_nodes for branch in self.nodes), [])
 
   def render(self):
     rendered_nodes = [node.render() for node in self.nodes]
@@ -248,13 +244,13 @@ def parse_graph(graph):
 
   def GCA(node):
     branches = node.inputs
-    branch_nodes  = [set([node]) | node_prevs[node.name] for node in branches]
+    branch_nodes = [{node} | node_prevs[node.name] for node in branches]
     branch_shared =  set.intersection(*branch_nodes)
     return max(branch_shared, key=lambda n: graph.nodes.index(n))
 
   def MCP(node):
     branches = node.consumers
-    branch_nodes  = [set([node]) | node_posts[node.name] for node in branches]
+    branch_nodes = [{node} | node_posts[node.name] for node in branches]
     branch_shared =  set.intersection(*branch_nodes)
     return min(branch_shared, key=lambda n: graph.nodes.index(n))
 
@@ -262,7 +258,7 @@ def parse_graph(graph):
     return sorted(nodes, key = lambda n: graph.nodes.index(n))
 
   def nodes_between(a, b):
-    return (node_prevs[b.name] - node_prevs[a.name]) | set([a,b])
+    return node_prevs[b.name] - node_prevs[a.name] | {a, b}
 
   def parse_node(node):
     return LayoutNode(node)
@@ -287,14 +283,15 @@ def parse_graph(graph):
     assert GCA(stop) == start
 
     branches = stop.inputs
-    branch_nodes  = [ (set([node]) | node_prevs[node.name])
-                     - (set([start]) | node_prevs[start.name])
-                     for node in branches]
+    branch_nodes = [
+        ({node} | node_prevs[node.name]) - ({start} | node_prevs[start.name])
+        for node in branches
+    ]
 
 
-    assert all([len(b1 & b2) == 0
-                for b1 in branch_nodes
-                for b2 in branch_nodes if b1 != b2])
+    assert all(
+        len(b1 & b2) == 0 for b1 in branch_nodes for b2 in branch_nodes
+        if b1 != b2)
 
     ret = []
     for nodes in branch_nodes:
@@ -326,7 +323,7 @@ def render_with_groups(seq, groups, bg_pad=6, pad_diff=8, pad_none=2):
       child1.pad[0][1] += pad_diff if child1.group != None else pad_none
       child2.pad[0][0] += pad_diff if child2.group != None else pad_none
 
-    elif child1.group == None:
+    elif child1.group is None:
       child1.pad[0][1] += pad_none
       child2.pad[0][0] += pad_none
 
@@ -368,7 +365,7 @@ def render_with_groups(seq, groups, bg_pad=6, pad_diff=8, pad_none=2):
 
   edges = []
   def p(point, dx=0):
-    return "%s,%s" % (point[0]+dx, point[1])
+    return f"{point[0] + dx},{point[1]}"
 
   for node in nodes:
     for inp in node.inputs:

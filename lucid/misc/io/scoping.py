@@ -42,8 +42,7 @@ def _normalize_url(url: str) -> str:
     # in this case we can't call `os.path.normpath(url_path)`
     # as it "normalizes" an empty input to "." (current directory)
     normalized_path = os.path.normpath(url_path) if url_path else ""
-    joined = url_scheme + sep + normalized_path
-    return joined
+    return url_scheme + sep + normalized_path
 
 
 def scope_url(url, io_scopes=None):
@@ -52,5 +51,4 @@ def scope_url(url, io_scopes=None):
         return url
     paths = io_scopes + [url]
     joined = os.path.join(*paths)
-    normalized = _normalize_url(joined)
-    return normalized
+    return _normalize_url(joined)

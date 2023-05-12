@@ -79,14 +79,12 @@ def frozen_default_graph_def(input_node_names, output_node_names):
       node.device = ""
 
   all_variable_names = [v.op.name for v in tf.global_variables()]
-  output_graph_def = tf.graph_util.convert_variables_to_constants(
+  return tf.graph_util.convert_variables_to_constants(
       sess=sess,
       input_graph_def=pruned_graph,
       output_node_names=output_node_names,
       variable_names_whitelist=all_variable_names,
   )
-
-  return output_graph_def
 
 
 metadata_node_name = "lucid_metadata_json"
@@ -111,8 +109,9 @@ def extract_metadata(graph_def):
   If present, extract it's content and convert it from json to python.
   If not, returns None.
   """
-  meta_matches = [n for n in graph_def.node if n.name==metadata_node_name]
-  if meta_matches:
+  if meta_matches := [
+      n for n in graph_def.node if n.name == metadata_node_name
+  ]:
     assert len(meta_matches) == 1, "found more than 1 lucid metadata node!"
     meta_tensor = meta_matches[0].attr['value'].tensor
     return json.loads(meta_tensor.string_val[0])
@@ -127,7 +126,7 @@ class GraphDefHelper(object):
   def __init__(self, graph_def):
     self.graph_def = graph_def
     self.by_op = defaultdict(list)
-    self.by_name = dict()
+    self.by_name = {}
     self.by_input = defaultdict(list)
     for node in graph_def.node:
       self.by_op[node.op].append(node)
@@ -140,11 +139,11 @@ class GraphDefHelper(object):
   def neighborhood(self, node, degree=4):
     """Am I really handcoding graph traversal please no"""
     assert self.by_name[node.name] == node
-    already_visited = frontier = set([node.name])
+    already_visited = frontier = {node.name}
     for _ in range(degree):
       neighbor_names = set()
       for node_name in frontier:
-        outgoing = set(n.name for n in self.by_input[node_name])
+        outgoing = {n.name for n in self.by_input[node_name]}
         incoming = set(self.by_name[node_name].input)
         neighbor_names |= incoming | outgoing
       frontier = neighbor_names - already_visited

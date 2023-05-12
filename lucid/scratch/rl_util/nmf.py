@@ -68,10 +68,7 @@ class LayerNMF:
         self.pad_h = 0
         self.pad_w = 0
         self.padded_obses = self.obses_full
-        if self.features is None:
-            self.reducer = None
-        else:
-            self.reducer = ChannelReducer(features)
+        self.reducer = None if self.features is None else ChannelReducer(features)
         acts = get_acts(model, layer_name, obses)
         self.patch_h = self.obses_full.shape[1] / acts.shape[1]
         self.patch_w = self.obses_full.shape[2] / acts.shape[2]
@@ -112,12 +109,10 @@ class LayerNMF:
             feature_list = [feature_list]
 
         obj = sum(
-            [
-                objectives.direction_neuron(
-                    self.layer_name, self.channel_dirs[feature], batch=feature
-                )
-                for feature in feature_list
-            ]
+            objectives.direction_neuron(
+                self.layer_name, self.channel_dirs[feature], batch=feature
+            )
+            for feature in feature_list
         )
         if l2_coeff != 0.0:
             assert (

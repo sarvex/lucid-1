@@ -26,7 +26,7 @@ def infer_data_format(t, max_depth=20):
 
   next_candidates = [as_tensor(t)]
 
-  for n in range(max_depth): # 5 is random sanity limit on recursion
+  for _ in range(max_depth):
     inps = []
     for t in next_candidates:
       # Easiest way to find out if a tensor has an attribute seems to be trying

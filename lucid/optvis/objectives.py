@@ -86,7 +86,7 @@ class Objective(object):
 
   @staticmethod
   def sum(objs):
-    objective_func = lambda T: sum([obj(T) for obj in objs])
+    objective_func = lambda T: sum(obj(T) for obj in objs)
     descriptions = [obj.description for obj in objs]
     description = "Sum(" + " +\n".join(descriptions) + ")"
     names = [obj.name for obj in objs]
@@ -208,7 +208,7 @@ def direction_neuron(layer_name, vec, x=None, y=None, cossim_pow=0, batch=None):
 @wrap_objective(require_format='NHWC')
 def tensor_direction(layer, vec, cossim_pow=0, batch=None):
   """Visualize a tensor."""
-  assert len(vec.shape) in [3,4]
+  assert len(vec.shape) in {3, 4}
   vec = vec.astype("float32")
   if len(vec.shape) == 3:
     vec = vec[None]
@@ -224,6 +224,7 @@ def tensor_direction(layer, vec, cossim_pow=0, batch=None):
                      M2 : M2+v_shp[2],
                      :]
     return _dot_cossim(t_acts_, vec, cossim_pow=cossim_pow)
+
   return inner
 
 
@@ -416,9 +417,12 @@ def diversity(layer):
     grams = tf.matmul(flattened, flattened, transpose_a=True)
     grams = tf.nn.l2_normalize(grams, axis=[1,2], epsilon=1e-10)
 
-    return sum([ sum([ tf.reduce_sum(grams[i]*grams[j])
-                      for j in range(batch_n) if j != i])
-                for i in range(batch_n)]) / batch_n
+    return (sum(
+        sum(
+            tf.reduce_sum(grams[i] * grams[j])
+            for j in range(batch_n) if j != i)
+        for i in range(batch_n)) / batch_n)
+
   return inner
 
 
@@ -449,13 +453,11 @@ def class_logit(layer, label, batch=None):
   """
   @handle_batch(batch)
   def inner(T):
-    if isinstance(label, int):
-      class_n = label
-    else:
-      class_n = T("labels").index(label)
+    class_n = label if isinstance(label, int) else T("labels").index(label)
     logits = T(layer)
     logit = tf.reduce_sum(logits[:, class_n])
     return logit
+
   return inner
 
 
@@ -471,9 +473,7 @@ def as_objective(obj):
   Returns:
     Objective
   """
-  if isinstance(obj, Objective):
-    return obj
-  elif callable(obj):
+  if isinstance(obj, Objective) or callable(obj):
     return obj
   elif isinstance(obj, str):
     layer, n = obj.split(":")

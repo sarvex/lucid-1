@@ -77,7 +77,7 @@ def test_model_layers_shapes(model_class):
         model.import_graph(scope=scope)
         for layer in model.layers:
             name, declared_size = layer.name, layer.depth
-            imported_name = "{}/{}:0".format(scope, name)
+            imported_name = f"{scope}/{name}:0"
             tensor = graph.get_tensor_by_name(imported_name)
             actual_size = tensor.shape[-1]
             assert int(actual_size) == int(declared_size)

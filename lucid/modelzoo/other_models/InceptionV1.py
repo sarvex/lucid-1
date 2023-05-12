@@ -23,14 +23,14 @@ def _populate_inception_bottlenecks(scope):
   """Add Inception bottlenecks and their pre-Relu versions to the graph."""
   graph = tf.get_default_graph()
   for op in graph.get_operations():
-    if op.name.startswith(scope+'/') and 'Concat' in op.type:
+    if op.name.startswith(f'{scope}/') and 'Concat' in op.type:
       name = op.name.split('/')[1]
       pre_relus = []
       for tower in op.inputs[1:]:
         if tower.op.type == 'Relu':
           tower = tower.op.inputs[0]
         pre_relus.append(tower)
-      concat_name = scope + '/' + name + '_pre_relu'
+      concat_name = f'{scope}/{name}_pre_relu'
       _ = tf.concat(pre_relus, -1, name=concat_name)
 
 

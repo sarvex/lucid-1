@@ -114,12 +114,11 @@ def get_box(render, name):
   box_map = render["node_boxes"]
   matches = [node for node in list(box_map.keys()) if node.name == name]
   match = matches[0]
-  box = box_map[match]
-  return box
+  return box_map[match]
 
 
 def p(point, dy=0):
-  return "%s,%s" % (point[0], point[1] + dy)
+  return f"{point[0]},{point[1] + dy}"
 
 
 def model_align_display(model1, model2, lines, middle_sep=150):
@@ -220,4 +219,4 @@ def model_align_display(model1, model2, lines, middle_sep=150):
 
 
 def vpad(space):
-  _display_html("""<div style="width:20px; height: %spx"></div>""" % space)
+  _display_html(f"""<div style="width:20px; height: {space}px"></div>""")

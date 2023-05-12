@@ -210,4 +210,9 @@ def test_batch_saves():
     assert context.captured_saves[0]['type'] == 'txt'
     print(context.captured_saves)
     assert 'write_batch_' in context.captured_saves[0]['url']
-    assert all([os.path.isfile(f"./tests/fixtures/generated_outputs/write_batch_{i}.txt") for i in range(5)])
+    assert all(
+        os.path.isfile(
+            f"./tests/fixtures/generated_outputs/write_batch_{i}.txt"
+        )
+        for i in range(5)
+    )

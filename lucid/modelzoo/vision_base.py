@@ -56,7 +56,7 @@ class Layer(object):
       warnings.warn("Property 'type' is deprecated on model layers. Please check if 'tags' contains the type you are looking for in the future! We're simply a tag for now.", DeprecationWarning)
       return list(self.tags)[0]
     if name not in self.__dict__:
-      error_message = "'Layer' object has no attribute '{}'".format(name)
+      error_message = f"'Layer' object has no attribute '{name}'"
       raise AttributeError(error_message)
     return self.__dict__[name]
 
@@ -145,10 +145,7 @@ class Model():
 
   @property
   def name(self):
-    if self.model_name == None:
-      return self.__class__.__name__
-    else:
-      return self.model_name
+    return self.__class__.__name__ if self.model_name is None else self.model_name
 
   def __str__(self):
     return self.name
@@ -167,7 +164,6 @@ class Model():
         "Calling `load_graphdef` is no longer necessary and now a noop. Graphs are loaded lazily when a models graph_def property is accessed.",
         DeprecationWarning,
     )
-    pass
 
   def post_import(self, scope):
     pass
@@ -203,9 +199,9 @@ class Model():
 
     def T(layer):
       if ":" in layer:
-          return graph.get_tensor_by_name("%s/%s" % (scope,layer))
+        return graph.get_tensor_by_name(f"{scope}/{layer}")
       else:
-          return graph.get_tensor_by_name("%s/%s:0" % (scope,layer))
+        return graph.get_tensor_by_name(f"{scope}/{layer}:0")
 
     return T
 
@@ -234,7 +230,6 @@ class Model():
       graph_def = tf.get_default_graph().as_graph_def()
     gdhelper = model_util.GraphDefHelper(graph_def)
     inferred_info = dict.fromkeys(("input_name", "image_shape", "output_names", "image_value_range"))
-    node_shape = lambda n: [dim.size for dim in n.attr['shape'].shape.dim]
     potential_input_nodes = gdhelper.by_op["Placeholder"]
     output_nodes = [node.name for node in gdhelper.by_op["Softmax"]]
 
@@ -243,10 +238,14 @@ class Model():
       input_dtype = tf.dtypes.as_dtype(input_node.attr['dtype'].type)
       if input_dtype.is_floating:
         input_name = input_node.name
-        print("Inferred: input_name = {} (because it was the only Placeholder in the graph_def)".format(input_name))
+        print(
+            f"Inferred: input_name = {input_name} (because it was the only Placeholder in the graph_def)"
+        )
         inferred_info["input_name"] = input_name
       else:
-        print("Warning: found a single Placeholder, but its dtype is {}. Lucid's parameterizations can only replace float dtypes. We're now scanning to see if you maybe divide this placeholder by 255 to get a float later in the graph...".format(str(input_node.attr['dtype']).strip()))
+        print(
+            f"Warning: found a single Placeholder, but its dtype is {str(input_node.attr['dtype']).strip()}. Lucid's parameterizations can only replace float dtypes. We're now scanning to see if you maybe divide this placeholder by 255 to get a float later in the graph..."
+        )
         neighborhood = gdhelper.neighborhood(input_node, degree=5)
         divs = [n for n in neighborhood if n.op == "RealDiv"]
         consts = [n for n in neighborhood if n.op == "Const"]
@@ -254,39 +253,48 @@ class Model():
         if divs and magic_number_present:
           if len(divs) == 1:
             input_name = divs[0].name
-            print("Guessed: input_name = {} (because it's the only division by 255 near the only placeholder)".format(input_name))
+            print(
+                f"Guessed: input_name = {input_name} (because it's the only division by 255 near the only placeholder)"
+            )
             inferred_info["input_name"] = input_name
             image_value_range = (0,1)
-            print("Guessed: image_value_range = {} (because you're dividing by 255 near the only placeholder)".format(image_value_range))
+            print(
+                f"Guessed: image_value_range = {image_value_range} (because you're dividing by 255 near the only placeholder)"
+            )
             inferred_info["image_value_range"] = (0,1)
           else:
-            warnings.warn("Could not infer input_name because there were multiple division ops near your the only placeholder. Candidates include: {}".format([n.name for n in divs]))
+            warnings.warn(
+                f"Could not infer input_name because there were multiple division ops near your the only placeholder. Candidates include: {[n.name for n in divs]}"
+            )
     else:
       warnings.warn("Could not infer input_name because there were multiple or no Placeholders.")
 
     if inferred_info["input_name"] is not None:
       input_node = gdhelper.by_name[inferred_info["input_name"]]
+      node_shape = lambda n: [dim.size for dim in n.attr['shape'].shape.dim]
       shape = node_shape(input_node)
-      if len(shape) in (3,4):
+      if len(shape) in {3, 4}:
         if len(shape) == 4:
           shape = shape[1:]
         if -1 not in shape:
-          print("Inferred: image_shape = {}".format(shape))
+          print(f"Inferred: image_shape = {shape}")
           inferred_info["image_shape"] = shape
       if inferred_info["image_shape"] is None:
         warnings.warn("Could not infer image_shape.")
 
     if output_nodes:
-      print("Inferred: output_names = {}  (because those are all the Softmax ops)".format(output_nodes))
+      print(
+          f"Inferred: output_names = {output_nodes}  (because those are all the Softmax ops)"
+      )
       inferred_info["output_names"] = output_nodes
     else:
       warnings.warn("Could not infer output_names.")
 
-    report = []
-    report.append("# Please sanity check all inferred values before using this code.")
-    report.append("# Incorrect `image_value_range` is the most common cause of feature visualization bugs! Most methods will fail silently with incorrect visualizations!")
-    report.append("Model.save(")
-
+    report = [
+        "# Please sanity check all inferred values before using this code.",
+        "# Incorrect `image_value_range` is the most common cause of feature visualization bugs! Most methods will fail silently with incorrect visualizations!",
+        "Model.save(",
+    ]
     suggestions = {
         "input_name" : 'input',
         "image_shape" : [224, 224, 3],
@@ -308,7 +316,7 @@ class Model():
   def save(save_url, input_name, output_names, image_shape, image_value_range):
     if ":" in input_name:
       raise ValueError("input_name appears to be a tensor (name contains ':') but must be an op.")
-    if any([":" in name for name in output_names]):
+    if any(":" in name for name in output_names):
       raise ValueError("output_namess appears to be contain tensor (name contains ':') but must be ops.")
 
     metadata = {
@@ -340,24 +348,27 @@ class Model():
   @staticmethod
   def load_from_graphdef(graphdef_url):
     graph_def = load(graphdef_url)
-    metadata = model_util.extract_metadata(graph_def)
-    if metadata:
+    if metadata := model_util.extract_metadata(graph_def):
       return Model.load_from_metadata(graphdef_url, metadata)
     else:
-      raise ValueError("Model.load_from_graphdef was called on a GraphDef ({}) that does not contain Lucid's metadata node. Model.load only works for models saved via Model.save. For the graphdef you're trying to load, you will need to provide custom metadata; see Model.load_from_metadata()".format(graphdef_url))
+      raise ValueError(
+          f"Model.load_from_graphdef was called on a GraphDef ({graphdef_url}) that does not contain Lucid's metadata node. Model.load only works for models saved via Model.save. For the graphdef you're trying to load, you will need to provide custom metadata; see Model.load_from_metadata()"
+      )
 
   @staticmethod
   def load_from_manifest(manifest_url):
     try:
       manifest = load(manifest_url)
     except Exception as e:
-      raise ValueError("Could not find manifest.json file in dir {}. Error: {}".format(manifest_url, e))
+      raise ValueError(
+          f"Could not find manifest.json file in dir {manifest_url}. Error: {e}")
 
-    if manifest.get('type', 'frozen') == 'frozen':
-      manifest_folder = path.dirname(manifest_url)
-      return FrozenGraphModel(manifest_folder, manifest)
-    else:
-      raise NotImplementedError("SerializedModel Manifest type '{}' has not been implemented!".format(manifest.get('type')))
+    if manifest.get('type', 'frozen') != 'frozen':
+      raise NotImplementedError(
+          f"SerializedModel Manifest type '{manifest.get('type')}' has not been implemented!"
+      )
+    manifest_folder = path.dirname(manifest_url)
+    return FrozenGraphModel(manifest_folder, manifest)
 
   def get_activations(self, layer, examples, batch_size=64,
                          dtype=None, ind_shape=None, center_only=False):
@@ -414,7 +425,9 @@ class FrozenGraphModel(SerializedModel):
 
     for mandatory_key in self._mandatory_properties:
       # TODO: consider if we can tell you the path of the faulty manifest here
-      assert mandatory_key in manifest.keys(), "Mandatory property '{}' was not defined in json manifest.".format(mandatory_key)
+      assert (
+          mandatory_key in manifest.keys()
+      ), f"Mandatory property '{mandatory_key}' was not defined in json manifest."
     for key, value in manifest.items():
       setattr(self, key, value)
 

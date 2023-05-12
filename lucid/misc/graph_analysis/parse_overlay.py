@@ -4,7 +4,7 @@ def collapse_sequences(overlay):
   """Detect and collapse sequences of nodes in an overlay."""
   sequences = []
   for node in overlay.nodes:
-    if any([node in seq for seq in sequences]): continue
+    if any(node in seq for seq in sequences): continue
     seq = [node]
     while len(node.consumers) == 1 and len(list(node.consumers)[0].inputs) == 1:
       node = list(node.consumers)[0]
@@ -12,10 +12,10 @@ def collapse_sequences(overlay):
     if len(seq) > 1:
       sequences.append(seq)
 
-  structure_map = {}
-  for seq in sequences:
-    structure_map[seq[-1]] = OverlayStructure("Sequence", {"sequence": seq})
-
+  structure_map = {
+      seq[-1]: OverlayStructure("Sequence", {"sequence": seq})
+      for seq in sequences
+  }
   return overlay.collapse_structures(structure_map)
 
 
@@ -26,7 +26,7 @@ def collapse_branches(overlay):
   for node in overlay.nodes:
     if len(node.inputs) <= 1: continue
     gcd = node.gcd
-    if all(inp == gcd or inp.inputs == set([gcd]) for inp in node.inputs):
+    if all(inp == gcd or inp.inputs == {gcd} for inp in node.inputs):
       branches = [inp if inp != gcd else None
                   for inp in overlay.sorted(node.inputs)]
       structure_map[node] = OverlayStructure("HeadBranch", {"branches" : branches, "head": node})
@@ -79,13 +79,12 @@ def parse_structure(node):
         }]
     }
   else:
-    data = {}
-    for k in structure.structure:
-      if isinstance(structure.structure[k], list):
-        data[k] = [parse_structure(n) for n in structure.structure[k]]
-      else:
-        data[k] = parse_structure(structure.structure[k])
-
+    data = {
+        k: [parse_structure(n) for n in structure.structure[k]] if isinstance(
+            structure.structure[k], list) else parse_structure(
+                structure.structure[k])
+        for k in structure.structure
+    }
     data["type"] = structure.structure_type
     return data
 
@@ -94,10 +93,9 @@ def flatten_sequences(structure):
   """Flatten nested sequences into a single sequence."""
   if isinstance(structure, str) or (isinstance(structure, dict) and structure["type"] == "Node") or structure is None:
     return structure
-  else:
-    structure = structure.copy()
-    if "children" in structure:
-      structure["children"] = [flatten_sequences(sub) for sub in structure["children"]]
+  structure = structure.copy()
+  if "children" in structure:
+    structure["children"] = [flatten_sequences(sub) for sub in structure["children"]]
 
   if structure["type"] == "Sequence":
     new_seq = []
@@ -118,7 +116,7 @@ def parse_overlay(overlay):
 
   while True:
     new_overlay = collapse_branches(collapse_sequences(new_overlay))
-    if not len(new_overlay.nodes) < prev_len:
+    if len(new_overlay.nodes) >= prev_len:
       break
     prev_len = len(new_overlay.nodes)
 
@@ -144,15 +142,27 @@ def toplevel_group_data(overlay):
   for top in tops:
     if top.op in ["Concat", "ConcatV2"]:
       groups[top.name] = {
-          "immediate" : _namify(overlay.sorted(top.inputs)),
-          "all" : _namify(overlay.sorted(top.extended_inputs - top.gcd.extended_inputs - set([top.gcd]) | set([top]))),
-          "direction" : "backward"
+          "immediate":
+          _namify(overlay.sorted(top.inputs)),
+          "all":
+          _namify(
+              overlay.sorted(top.extended_inputs - top.gcd.extended_inputs -
+                             {top.gcd}
+                             | {top})),
+          "direction":
+          "backward",
       }
     if len(top.consumers) > 1 and all(out.op == "Split" for out in top.consumers):
       groups[top.name] = {
-          "immediate" : _namify(overlay.sorted(top.consumers)),
-          "all" : _namify(overlay.sorted(top.extended_consumers - top.lcm.extended_consumers - set([top.lcm]) | set([top]))),
-          "direction" : "forward"
+          "immediate":
+          _namify(overlay.sorted(top.consumers)),
+          "all":
+          _namify(
+              overlay.sorted(top.extended_consumers -
+                             top.lcm.extended_consumers - {top.lcm}
+                             | {top})),
+          "direction":
+          "forward",
       }
 
   return groups

@@ -49,7 +49,7 @@ def aligned_umap(activations, umap_options={}, normalize=True, verbose=False):
     umap_defaults = dict(
         n_components=2, n_neighbors=50, min_dist=0.05, verbose=verbose, metric="cosine"
     )
-    umap_defaults.update(umap_options)
+    umap_defaults |= umap_options
 
     # if passed a list of activations, we combine them and later split the layouts
     if type(activations) is list or type(activations) is tuple:
@@ -68,7 +68,6 @@ def aligned_umap(activations, umap_options={}, normalize=True, verbose=False):
         layout = normalize_layout(layout)
 
     if num_activation_groups > 1:
-        layouts = np.split(layout, num_activation_groups, axis=0)
-        return layouts
+        return np.split(layout, num_activation_groups, axis=0)
     else:
         return layout

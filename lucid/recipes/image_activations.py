@@ -17,14 +17,14 @@ def image_activations(model, image, layer_names=None):
 
     resized_image = resize(image, model.image_shape[:2])
 
-    with tf.Graph().as_default() as graph, tf.Session() as sess:
+    with (tf.Graph().as_default() as graph, tf.Session() as sess):
         image_t = tf.placeholder_with_default(resized_image, shape=model.image_shape)
         model.import_graph(image_t, scope="import")
         layer_ts = {}
         for layer_name in layer_names:
-          name = layer_name if layer_name.endswith(":0") else layer_name + ":0"
-          layer_t = graph.get_tensor_by_name("import/{}".format(name))[0]
-          layer_ts[layer_name] = layer_t
+            name = layer_name if layer_name.endswith(":0") else f"{layer_name}:0"
+            layer_t = graph.get_tensor_by_name(f"import/{name}")[0]
+            layer_ts[layer_name] = layer_t
         activations = sess.run(layer_ts)
 
     return activations
@@ -36,16 +36,16 @@ def manifest_image_activations(model, image, **kwargs):
     end = timer()
     elapsed = end - start
 
-    results = {"type": "image-activations", "took": elapsed}
-
-    results["values"] = [
-        {
-            "type": "activations",
-            "value": value,
-            "shape": value.shape,
-            "layer_name": layer_name,
-        }
-        for layer_name, value in activations_dict.items()
-    ]
-
-    return results
+    return {
+        "type": "image-activations",
+        "took": elapsed,
+        "values": [
+            {
+                "type": "activations",
+                "value": value,
+                "shape": value.shape,
+                "layer_name": layer_name,
+            }
+            for layer_name, value in activations_dict.items()
+        ],
+    }

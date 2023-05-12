@@ -63,7 +63,7 @@ def get_activations_iter(model, layer, generator, reducer="mean", batch_size=64,
       "max"  : (lambda a,b: np.maximum(a,b), lambda a,n: a           ),
   }[reducer]
 
-  with tf.Graph().as_default(), tf.Session() as sess:
+  with (tf.Graph().as_default(), tf.Session() as sess):
     t_img = tf.placeholder("float32", [None, None, None, 3])
     T = model.import_graph(t_img)
     t_layer = T(layer)
@@ -87,15 +87,10 @@ def get_activations_iter(model, layer, generator, reducer="mean", batch_size=64,
       if dtype is not None:
         acts = acts.astype(dtype)
 
-      # On the first iteration of the loop, create objects to hold responses
-      # (we wanted to know acts.shape[-1] before creating it in the numpy case)
       if responses is None:
-        # If we don't know what the extent of the indices will be in advance
-        # we need to use a dictionary to support dynamic range
         if ind_shape is None:
           responses = {}
           count = defaultdict(lambda: 0)
-        # But if we do, we can use a much more efficient numpy array
         else:
           responses = np.zeros(list(ind_shape) + list(acts.shape[1:]),
                                dtype=acts.dtype)
@@ -105,11 +100,7 @@ def get_activations_iter(model, layer, generator, reducer="mean", batch_size=64,
       # Store each batch item in appropriate index, performing reduction
       for ind, act in zip(inds, acts):
         count[ind] += 1
-        if ind in responses:
-          responses[ind] = combiner(responses[ind], act)
-        else:
-          responses[ind] = act
-
+        responses[ind] = combiner(responses[ind], act) if ind in responses else act
   # complete reduction as necessary, then return
   # First the case where everything is in numpy
   if isinstance(responses, np.ndarray):

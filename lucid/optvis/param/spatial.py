@@ -83,8 +83,7 @@ def fft_image(shape, sd=None, decay_power=1):
 
     # in case of odd spatial input dimensions we need to crop
     image_t = image_t[:batch, :h, :w, :ch]
-    image_t = image_t / 4.0  # TODO: is that a magic constant?
-    return image_t
+    return image_t / 4.0
 
 
 def laplacian_pyramid_image(shape, n_levels=4, sd=None):

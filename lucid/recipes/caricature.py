@@ -42,7 +42,7 @@ def caricature(img, model, layer, n_steps=512, cossim_pow=0.0, verbose=True):
   else:
     raise TypeError("layer must be str, tuple or list")
 
-  with tf.Graph().as_default(), tf.Session() as sess:
+  with (tf.Graph().as_default(), tf.Session() as sess):
     img = resize(img, model.image_shape[:2])
 
     objective = objectives.Objective.sum([
@@ -60,7 +60,8 @@ def caricature(img, model, layer, n_steps=512, cossim_pow=0.0, verbose=True):
     loss, vis_op, t_image = T("loss"), T("vis_op"), T("input")
 
     tf.global_variables_initializer().run()
-    for i in range(n_steps): _ = sess.run([vis_op], {t_input: img})
+    for _ in range(n_steps):
+      _ = sess.run([vis_op], {t_input: img})
 
     result = t_image.eval(feed_dict={t_input: img})
 
@@ -75,15 +76,12 @@ def make_caricature(image_url, saved_model_folder_url, to, *args, **kwargs):
   layers = model.layer_names
   caricatures = caricature(image, model, layers, *args, verbose=False, **kwargs)
 
-  results = {"type": "caricature"}
-
   save_input_url = join(to, "input.jpg")
   save(caricatures[0], save_input_url)
-  results["input_image"] = save_input_url
-
+  results = {"type": "caricature", "input_image": save_input_url}
   values_list = []
   for single_caricature, layer_name in zip(caricatures[1:], model.layer_names):
-    save_caricature_url = join(to, layer_name + ".jpg")
+    save_caricature_url = join(to, f"{layer_name}.jpg")
     save(single_caricature, save_caricature_url)
     values_list.append({"type": "image", "url": save_caricature_url, "shape": single_caricature.shape})
   results["values"] = values_list

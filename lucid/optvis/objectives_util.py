@@ -61,8 +61,6 @@ def _T_force_NHWC(T):
 def _T_handle_batch(T, batch=None):
   def T2(name):
     t = T(name)
-    if isinstance(batch, int):
-      return t[batch:batch+1]
-    else:
-      return t
+    return t[batch:batch+1] if isinstance(batch, int) else t
+
   return T2

@@ -76,21 +76,18 @@ def write_grid_local(tiles, params):
   for ti,tj,tile in enumerate_tiles(tiles):
     filename = "{directory}/{name}/tile_{n_layer}_{n_tile}_{ti}_{tj}".format(ti=ti, tj=tj, **params) #directory=directory, name=name, n_layer=n_layer, n_tile=n_tile, 
     # write out the tile as a npz
-    print("saving", filename + ".npz")
-    np.savez_compressed(filename + ".npz", **tile)
+    print("saving", f"{filename}.npz")
+    np.savez_compressed(f"{filename}.npz", **tile)
     # write out the tile as a csv
-    print("saving", filename + ".csv")
+    print("saving", f"{filename}.csv")
     df = pd.DataFrame(tile)
-    df.to_csv(filename + ".csv", index=False)
+    df.to_csv(f"{filename}.csv", index=False)
 
 def enumerate_tiles(tiles):
   """
   Convenience
   """
-  enumerated = []
-  for key in tiles.keys():
-    enumerated.append((key[0], key[1], tiles[key]))
-  return enumerated
+  return [(key[0], key[1], tiles[key]) for key in tiles.keys()]
 
 
 # TODO: use named parameters?

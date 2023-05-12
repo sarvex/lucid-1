@@ -29,8 +29,10 @@ def get_branch_nodes(graphdef, concat_node):
   for n in range(len(branch_head_preds)):
     pres_preds = branch_head_preds[n]
     other_preds = branch_head_preds[:n] + branch_head_preds[n+1:]
-    uniqs += [name for name in pres_preds
-             if not any(name in others for others in other_preds)]
+    uniqs += [
+        name for name in pres_preds
+        if all(name not in others for others in other_preds)
+    ]
   return uniqs
   
   
@@ -40,11 +42,12 @@ def propose_layers(graphdef):
   branch_nodes = []
   for node in concats:
     branch_nodes += get_branch_nodes(graphdef, node)
-  
-  layer_proposals = [node for node in graphdef.node
-             if node.op in ["Relu", "Concat", "ConcatV2", "Softmax", "Add"] and node.name not in branch_nodes]
 
-  return layer_proposals
+  return [
+      node for node in graphdef.node
+      if node.op in ["Relu", "Concat", "ConcatV2", "Softmax", "Add"]
+      and node.name not in branch_nodes
+  ]
   
   
 def propose_layers_with_shapes(model):

@@ -58,12 +58,11 @@ def collapse_sequence(graph, sequence):
     remainder = sequence[:]
     matches = []
     while remainder:
-      if node.op == remainder[0]:
-        matches.append(node.name)
-        remainder = remainder[1:]
-      else:
+      if node.op != remainder[0]:
         break
 
+      matches.append(node.name)
+      remainder = remainder[1:]
       if len(remainder):
         if len(node.consumers) != 1:
           break

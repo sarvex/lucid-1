@@ -105,13 +105,12 @@ def read_handle(url, cache=None, mode="rb"):
 
     if cache:
         handle = _read_and_cache(url, mode=mode)
+    elif scheme in ("http", "https"):
+        handle = _handle_web_url(url, mode=mode)
+    elif scheme in ("gs"):
+        handle = _handle_gfile(url, mode=mode)
     else:
-        if scheme in ("http", "https"):
-            handle = _handle_web_url(url, mode=mode)
-        elif scheme in ("gs"):
-            handle = _handle_gfile(url, mode=mode)
-        else:
-            handle = open(url, mode=mode)
+        handle = open(url, mode=mode)
 
     yield handle
     handle.close()
@@ -169,7 +168,7 @@ def _purge_cached(url):
     local_path = local_cache_path(url)
     if not os.path.exists(local_path):
         return  # avoids obtaining lock if no work to do anyway
-    lock = FileLock(local_path + ".lockfile")
+    lock = FileLock(f"{local_path}.lockfile")
     with lock:
         try:
             os.remove(local_path)
@@ -179,7 +178,7 @@ def _purge_cached(url):
 
 def _read_and_cache(url, mode="rb"):
     local_path = local_cache_path(url)
-    lock = FileLock(local_path + ".lockfile")
+    lock = FileLock(f"{local_path}.lockfile")
     with lock:
         if os.path.exists(local_path):
             log.debug("Found cached file '%s'.", local_path)
@@ -211,7 +210,4 @@ _READ_BUFFER_SIZE = 1048576  # setting a larger value here to help read bigger c
 
 def _file_chunk_iterator(file_handle):
     reader = partial(file_handle.read, _READ_BUFFER_SIZE)
-    file_iterator = iter(reader, bytes())
-    # TODO: once dropping Python <3.3 compat, update to `yield from ...`
-    for chunk in file_iterator:
-        yield chunk
+    yield from iter(reader, bytes())

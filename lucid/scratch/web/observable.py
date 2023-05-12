@@ -17,14 +17,14 @@ def renderObservable(url, cells=None, data=None):
   </div>
   <script type="module">
   """.format(url)
-  
+
   runtimeImport = "import {Runtime} from 'https://unpkg.com/@observablehq/notebook-runtime?module';"
-  
+
   notebookImport = "import notebook from 'https://api.observablehq.com/{0}.js';".format(url)
-  
-  cellsSerialized = "let cells = {};".format(json.dumps(cells))
-  dataSerialized = "let data = {};".format(json.dumps(data))
-  
+
+  cellsSerialized = f"let cells = {json.dumps(cells)};"
+  dataSerialized = f"let data = {json.dumps(data)};"
+
   code = """
   const outputEl = document.getElementById("output");
   
@@ -78,9 +78,9 @@ def renderObservable(url, cells=None, data=None):
     
   });
   """
-  
+
   foot = "</script>"
-  
+
   _display_html(
       head + runtimeImport + notebookImport + cellsSerialized + dataSerialized + code + foot
   )

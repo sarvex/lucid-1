@@ -19,7 +19,7 @@ class Node(object):
     self.pretty_name = pretty_name
 
   def __repr__(self):
-    return "<%s: %s>" % (self.name, self.op)
+    return f"<{self.name}: {self.op}>"
 
   @property
   def inputs(self):
@@ -62,13 +62,13 @@ class Graph(object):
   def graphviz(self, groups=None):
     print("digraph G {")
     if groups is not None:
-        for root, group in groups.items():
-          print("")
-          print(("  subgraph", "cluster_%s" % root.name.replace("/", "_"), "{"))
-          print(("  label = \"%s\"") % (root.pretty_name or root.name))
-          for node in group:
-            print(("    \"%s\"") % (node.pretty_name or node.name))
-          print("  }")
+      for root, group in groups.items():
+        print("")
+        print(("  subgraph", f'cluster_{root.name.replace("/", "_")}', "{"))
+        print(("  label = \"%s\"") % (root.pretty_name or root.name))
+        for node in group:
+          print(("    \"%s\"") % (node.pretty_name or node.name))
+        print("  }")
     for node in self.nodes:
       for inp in node.inputs:
         print(("  ", '"' + (inp.pretty_name or inp.name) + '"', " -> ", '"' + (node.pretty_name or node.name) + '"'))
@@ -167,12 +167,11 @@ def filter_graph_collapse_sequence(graph, sequence):
     while remainder:
       if len(node.consumers) > 1 and len(remainder) > 1:
         break
-      if node.op == remainder[0]:
-        matches.append(node.name)
-        node = node.consumers[0]
-        remainder = remainder[1:]
-      else:
+      if node.op != remainder[0]:
         break
+      matches.append(node.name)
+      node = node.consumers[0]
+      remainder = remainder[1:]
     if len(remainder) == 0:
       exclude_nodes += matches[:-1]
 
@@ -215,10 +214,10 @@ def find_groups(graph):
   group_children = set()
   for root_node in concat_nodes:
     branch_heads = root_node.inputs
-    branch_nodes = [set([node]) | node_successors[node.name] for node in branch_heads]
+    branch_nodes = [{node} | node_successors[node.name] for node in branch_heads]
     branch_shared = set.intersection(*branch_nodes)
     branch_uniq = set.union(*branch_nodes) - branch_shared
-    groups[root_node] = set([root_node]) | branch_uniq
+    groups[root_node] = {root_node} | branch_uniq
     group_children |= branch_uniq
 
   for root in list(groups.keys()):

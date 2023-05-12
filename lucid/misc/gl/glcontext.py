@@ -69,11 +69,9 @@ try:
 except:
   print('Unable to load OpenGL libraries. '
         'Make sure you use GPU-enabled backend.')
-  print('Press "Runtime->Change runtime type" and set '
-        '"Hardware accelerator" to GPU.')
-  raise
-finally:
-  ctypes.util.find_library = _find_library_old
+print('Press "Runtime->Change runtime type" and set '
+      '"Hardware accelerator" to GPU.')
+raise
 
 
 def create_opengl_context(surface_size=(640, 480)):

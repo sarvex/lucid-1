@@ -90,6 +90,7 @@ def dict_to_ndarray(d):
 def batch_iter(it, batch_size=64):
   """Iterate through an iterable object in batches."""
   while True:
-    batch = list(itertools.islice(it, batch_size))
-    if not batch: break
-    yield batch
+    if batch := list(itertools.islice(it, batch_size)):
+      yield batch
+    else:
+      break

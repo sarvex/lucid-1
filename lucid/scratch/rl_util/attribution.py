@@ -49,16 +49,13 @@ def get_grad_or_attr(
     override=None,
     integrate_steps=1
 ):
-    with tf.Graph().as_default(), tf.Session(), gradient_override_map(override or {}):
+    with (tf.Graph().as_default(), tf.Session(), gradient_override_map(override or {})):
         t_obses = tf.placeholder_with_default(
             obses.astype(np.float32), (None, None, None, None)
         )
         T = render.import_model(model, t_obses, t_obses)
         t_acts = T(layer_name)
-        if prev_layer_name is None:
-            t_acts_prev = t_obses
-        else:
-            t_acts_prev = T(prev_layer_name)
+        t_acts_prev = t_obses if prev_layer_name is None else T(prev_layer_name)
         if act_dir is not None:
             t_acts = act_dir[None, None, None] * t_acts
         if act_poses is not None:
@@ -74,10 +71,8 @@ def get_grad_or_attr(
             acts_prev = t_acts_prev.eval()
             grad = (
                 sum(
-                    [
-                        t_grad.eval(feed_dict={t_acts_prev: acts_prev * alpha})
-                        for alpha in np.linspace(0, 1, integrate_steps + 1)[1:]
-                    ]
+                    t_grad.eval(feed_dict={t_acts_prev: acts_prev * alpha})
+                    for alpha in np.linspace(0, 1, integrate_steps + 1)[1:]
                 )
                 / integrate_steps
             )
@@ -157,16 +152,13 @@ def get_multi_path_attr(
     max_paths=50,
     integrate_steps=10
 ):
-    with tf.Graph().as_default(), tf.Session(), gradient_override_map(override or {}):
+    with (tf.Graph().as_default(), tf.Session(), gradient_override_map(override or {})):
         t_obses = tf.placeholder_with_default(
             obses.astype(np.float32), (None, None, None, None)
         )
         T = render.import_model(model, t_obses, t_obses)
         t_acts = T(layer_name)
-        if prev_layer_name is None:
-            t_acts_prev = t_obses
-        else:
-            t_acts_prev = T(prev_layer_name)
+        t_acts_prev = t_obses if prev_layer_name is None else T(prev_layer_name)
         if act_dir is not None:
             t_acts = act_dir[None, None, None] * t_acts
         if act_poses is not None:

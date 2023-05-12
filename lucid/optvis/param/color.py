@@ -69,7 +69,4 @@ def to_valid_rgb(t, decorrelate=False, sigmoid=True):
     t = _linear_decorelate_color(t)
   if decorrelate and not sigmoid:
     t += color_mean
-  if sigmoid:
-    return tf.nn.sigmoid(t)
-  else:
-    return constrain_L_inf(2*t-1)/2 + 0.5
+  return tf.nn.sigmoid(t) if sigmoid else constrain_L_inf(2*t-1)/2 + 0.5

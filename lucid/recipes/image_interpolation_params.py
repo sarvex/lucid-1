@@ -45,14 +45,15 @@ def multi_interpolation_basis(n_objectives=6, n_interp_steps=5, width=128,
   """
   N, M, W, Ch = n_objectives, n_interp_steps, width, channels
 
-  const_term = sum([lowres_tensor([W, W, Ch], [W//k, W//k, Ch])
-                    for k in [1, 2, 4, 8]])
+  const_term = sum(
+      lowres_tensor([W, W, Ch], [W // k, W // k, Ch]) for k in [1, 2, 4, 8])
   const_term = tf.reshape(const_term, [1, 1, 1, W, W, Ch])
 
   example_interps = [
-      sum([lowres_tensor([M, W, W, Ch], [2, W//k, W//k, Ch])
-           for k in [1, 2, 4, 8]])
-      for _ in range(N)]
+      sum(
+          lowres_tensor([M, W, W, Ch], [2, W // k, W // k, Ch])
+          for k in [1, 2, 4, 8]) for _ in range(N)
+  ]
 
   example_basis = []
   for n in range(N):
@@ -66,9 +67,8 @@ def multi_interpolation_basis(n_objectives=6, n_interp_steps=5, width=128,
   for n in range(N):
     col = [interp_basis[m][N-n][::-1] for m in range(n)]
     col.append(tf.zeros([M, W, W, 3]))
-    for m in range(n+1, N):
-      interp = sum([lowres_tensor([M, W, W, Ch], [M, W//k, W//k, Ch])
-                    for k in [1, 2]])
+    for _ in range(n+1, N):
+      interp = sum(lowres_tensor([M, W, W, Ch], [M, W//k, W//k, Ch]) for k in [1, 2])
       col.append(interp)
     interp_basis.append(col)
 

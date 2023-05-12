@@ -42,9 +42,7 @@ def _constrain_L2_grad(op, grad):
   allow_grad = tf.logical_or(is_in_ball, is_pointed_inward)
   clip_grad = tf.logical_not(allow_grad)
 
-  clipped_grad = tf.cond(clip_grad, lambda: grad - parallel_grad, lambda: grad)
-
-  return clipped_grad
+  return tf.cond(clip_grad, lambda: grad - parallel_grad, lambda: grad)
 
 
 @use_gradient(_constrain_L2_grad)
@@ -113,7 +111,4 @@ def unit_ball_L_inf(shape, precondition=True):
   they are strong attacks. We are not yet confident in this code.
   """
   x = tf.Variable(tf.zeros(shape))
-  if precondition:
-    return constrain_L_inf_precondition(x)
-  else:
-    return constrain_L_inf(x)
+  return constrain_L_inf_precondition(x) if precondition else constrain_L_inf(x)

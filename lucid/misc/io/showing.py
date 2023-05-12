@@ -54,16 +54,16 @@ def _image_url(array, fmt='png', mode="data", quality=90, domain=None):
 
   image_data = serialize_array(array, fmt=fmt, quality=quality, domain=domain)
   base64_byte_string = base64.b64encode(image_data).decode('ascii')
-  return "data:image/" + fmt.upper() + ";base64," + base64_byte_string
+  return f"data:image/{fmt.upper()};base64,{base64_byte_string}"
 
 
 # public functions
 
 def _image_html(array, w=None, domain=None, fmt='png'):
   url = _image_url(array, domain=domain, fmt=fmt)
-  style = "image-rendering: pixelated; image-rendering: crisp-edges;"
   if w is not None:
-    style += "width: {w}px;".format(w=w)
+    style = ("image-rendering: pixelated; image-rendering: crisp-edges;" +
+             "width: {w}px;".format(w=w))
   return """<img src="{url}" style="{style}">""".format(**locals())
 
 def image(array, domain=None, w=None, format='png', **kwargs):
@@ -146,22 +146,23 @@ def show(thing, domain=(0, 1), **kwargs):
   def collapse_if_needed(arr):
     K = arr.shape[-1]
     if K not in [1,3,4]:
-      log.debug("Collapsing %s channels into 3 RGB channels." % K)
+      log.debug(f"Collapsing {K} channels into 3 RGB channels.")
       return collapse_channels(arr)
     else:
       return arr
 
 
+
   if isinstance(thing, np.ndarray):
     rank = len(thing.shape)
 
-    if rank in [3,4]:
+    if rank in {3, 4}:
       thing = collapse_if_needed(thing)
 
     if rank == 4:
       log.debug("Show is assuming rank 4 tensor to be a list of images.")
       images(thing, domain=domain, **kwargs)
-    elif rank in (2, 3):
+    elif rank in {2, 3}:
       log.debug("Show is assuming rank 2 or 3 tensor to be an image.")
       image(thing, domain=domain, **kwargs)
     else:
@@ -342,15 +343,15 @@ def _strip_consts(graph_def, max_const_size=32):
 
 
 def graph(graph_def, max_const_size=32):
-    """Visualize a TensorFlow graph.
+  """Visualize a TensorFlow graph.
 
     This function was originally found in this notebook (also Apache licensed):
     https://github.com/tensorflow/tensorflow/blob/master/tensorflow/examples/tutorials/deepdream/deepdream.ipynb
     """
-    if hasattr(graph_def, 'as_graph_def'):
-        graph_def = graph_def.as_graph_def()
-    strip_def = _strip_consts(graph_def, max_const_size=max_const_size)
-    code = """
+  if hasattr(graph_def, 'as_graph_def'):
+      graph_def = graph_def.as_graph_def()
+  strip_def = _strip_consts(graph_def, max_const_size=max_const_size)
+  code = """
         <script>
           function load() {{
             document.getElementById("{id}").pbtxt = {data};
@@ -360,9 +361,10 @@ def graph(graph_def, max_const_size=32):
         <div style="height:600px">
           <tf-graph-basic id="{id}"></tf-graph-basic>
         </div>
-    """.format(data=repr(str(strip_def)), id='graph'+str(np.random.rand()))
+    """.format(data=repr(str(strip_def)),
+                     id=f'graph{str(np.random.rand())}')
 
-    iframe = """
+  iframe = """
         <iframe seamless style="width:100%; height:620px; border: none;" srcdoc="{}"></iframe>
     """.format(code.replace('"', '&quot;'))
-    _display_html(iframe)
+  _display_html(iframe)

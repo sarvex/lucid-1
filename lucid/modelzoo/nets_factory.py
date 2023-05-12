@@ -58,11 +58,8 @@ def get_model(name):
         candidates = filter(lambda key: name in key, models_map.keys())
         candidates_string = ", ".join(candidates)
         raise ValueError(
-            "No network named {}. Did you mean one of {}?".format(
-                name, candidates_string
-            )
+            f"No network named {name}. Did you mean one of {candidates_string}?"
         )
 
     model_class = models_map[name]
-    model = model_class()
-    return model
+    return model_class()

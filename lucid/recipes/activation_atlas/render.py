@@ -100,24 +100,23 @@ def render_icons(
     input_shape = (batch, size, size, depth)
 
     # Render two attempts, and pull the one with the lowest loss score.
-    for attempt in range(num_attempts):
-
+    for _ in range(num_attempts):
         # Render an image for each activation vector
         param_f = lambda: param.image(
             size, batch=len(directions), fft=True, decorrelate=True, alpha=alpha
         )
 
-        if cossim is True:
-            obj_list = [
+        obj_list = (
+            [
                 direction_neuron_cossim_S(layer, v, batch=n, S=S)
                 for n, v in enumerate(directions)
             ]
-        else:
-            obj_list = [
+            if cossim is True
+            else [
                 direction_neuron_S(layer, v, batch=n, S=S)
                 for n, v in enumerate(directions)
             ]
-
+        )
         obj_list += [
           objectives.penalize_boundary_complexity(input_shape, w=5)
         ]
@@ -143,7 +142,7 @@ def render_icons(
         # This is the tensorflow optimization process
 
         # print("attempt: ", attempt)
-        with tf.Graph().as_default(), tf.Session() as sess:
+        with (tf.Graph().as_default(), tf.Session() as sess):
             learning_rate = 0.05
             losses = []
             trainer = tf.train.AdamOptimizer(learning_rate)
@@ -151,12 +150,9 @@ def render_icons(
             vis_op, t_image = T("vis_op"), T("input")
             losses_ = [obj_part(T) for obj_part in obj_list]
             tf.global_variables_initializer().run()
-            for i in range(n_steps):
+            for _ in range(n_steps):
                 loss, _ = sess.run([losses_, vis_op])
                 losses.append(loss)
-                # if i % 100 == 0:
-                    # print(i)
-
             img = t_image.eval()
             img_rgb = img[:, :, :, :3]
             if alpha:

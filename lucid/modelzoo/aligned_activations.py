@@ -68,5 +68,4 @@ def push_activations(activations, from_layer, to_layer):
     inverse_covariance_matrix = layer_inverse_covariance(from_layer)
     activations_decorrelated = np.dot(inverse_covariance_matrix, activations.T).T
     covariance_matrix = layer_covariance(from_layer, to_layer)
-    activation_recorrelated = np.dot(activations_decorrelated, covariance_matrix)
-    return activation_recorrelated
+    return np.dot(activations_decorrelated, covariance_matrix)

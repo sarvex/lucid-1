@@ -112,10 +112,10 @@ def load_obj(fn):
   position = [np.zeros(3, dtype=np.float32)]
   normal = [np.zeros(3, dtype=np.float32)]
   uv = [np.zeros(2, dtype=np.float32)]
-  
+
   tuple2idx = OrderedDict()
   trinagle_indices = []
-  
+
   input_file = open(fn) if isinstance(fn, str) else fn
   for line in input_file:
     line = line.strip()
@@ -123,17 +123,8 @@ def load_obj(fn):
       continue
     line = line.split(' ', 1)
     tag = line[0]
-    if len(line) > 1:
-      line = line[1]
-    else:
-      line = ''
-    if tag == 'v':
-      position.append(np.fromstring(line, sep=' '))
-    elif tag == 'vt':
-      uv.append(np.fromstring(line, sep=' '))
-    elif tag == 'vn':
-      normal.append(np.fromstring(line, sep=' '))
-    elif tag == 'f':
+    line = line[1] if len(line) > 1 else ''
+    if tag == 'f':
       output_face_indices = []
       for chunk in line.split():
         # tuple order: pos_idx, uv_idx, normal_idx
@@ -143,11 +134,14 @@ def load_obj(fn):
         output_face_indices.append(tuple2idx[vt])
       # generate face triangles
       for i in range(1, len(output_face_indices)-1):
-        for vi in [0, i, i+1]:
-          trinagle_indices.append(output_face_indices[vi])
-  
-  outputs = {}
-  outputs['face'] = np.int32(trinagle_indices)
+        trinagle_indices.extend(output_face_indices[vi] for vi in [0, i, i+1])
+    elif tag == 'v':
+      position.append(np.fromstring(line, sep=' '))
+    elif tag == 'vn':
+      normal.append(np.fromstring(line, sep=' '))
+    elif tag == 'vt':
+      uv.append(np.fromstring(line, sep=' '))
+  outputs = {'face': np.int32(trinagle_indices)}
   pos_idx, uv_idx, normal_idx = np.int32(list(tuple2idx)).T
   if np.any(pos_idx):
     outputs['position'] = _unify_rows(position)[pos_idx]
